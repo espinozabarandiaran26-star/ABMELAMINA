@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ALONZO BARANDIARAN | Master Site v21</title>
+    <title>ALONZO BARANDIARAN | Master Site v22</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     
@@ -60,6 +60,7 @@
         .srv-head { font-family: 'Syncopate'; font-size: 1.1rem; margin-bottom: 10px; color: white; }
         .srv-txt { font-size: 0.85rem; color: #888; line-height: 1.6; }
         
+        /* PROJECTS GRID */
         .projects-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 40px; }
         .project-item { margin-bottom: 30px; cursor: pointer; }
         .prj-thumb { height: 350px; background: #111; border: 1px solid #222; margin-bottom: 15px; position: relative; overflow: hidden; }
@@ -447,7 +448,7 @@
             if (!navigator.geolocation) { alert("GPS no soportado"); return; }
             navigator.geolocation.getCurrentPosition(pos => {
                 const lat = pos.coords.latitude; const lng = pos.coords.longitude;
-                const link = `http://maps.google.com/?q=${lat},${lng}`;
+                const link = `http://googleusercontent.com/maps.google.com/?q=${lat},${lng}`;
                 document.getElementById(context === 'diag' ? 'diagCoords' : 'orderCoords').value = link;
                 btn.innerText = "✅ LISTO";
                 if(context === 'check') calculateShipping({lat, lng});
@@ -472,7 +473,7 @@
 
         function confirmMapLocation() {
             const pos = marker.getLatLng();
-            const link = `http://maps.google.com/?q=${pos.lat},${pos.lng}`;
+            const link = `http://googleusercontent.com/maps.google.com/?q=${pos.lat},${pos.lng}`;
             document.getElementById(activeMapContext === 'diag' ? 'diagCoords' : 'orderCoords').value = link;
             document.getElementById('mapModal').style.display = 'none';
             if(activeMapContext === 'check') calculateShipping(pos);
@@ -519,7 +520,8 @@
                         `💳 *MÉTODO:* ${selectedPayShop}\n\n` +
                         `📎 *Adjunto mi comprobante (FOTO)* 👇`;
             
-            const data = { fecha: new Date().toLocaleString(), tipo: 'VENTA', cliente: name, telefono: phone, direccion: address, detalle: itemsString, monto: total };
+            // CORRECCION: Asegurar que direccion combine texto y link
+            const data = { fecha: new Date().toLocaleString(), tipo: 'VENTA', cliente: name, telefono: phone, direccion: address + ' [MAPA: ' + mapLink + ']', detalle: itemsString, monto: total };
             fetch(URL_COLLECTION, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
             window.open(`https://wa.me/51989551575?text=${encodeURIComponent(msg)}`, '_blank');
             closeCheckout(); cart = []; updateCartCounter();
@@ -551,7 +553,7 @@
                         `📲 *AGENDAR:* ${calLink}\n\n` +
                         `📎 *Adjunto comprobante S/. 200* 👇`;
 
-            const data = { fecha: new Date().toLocaleString(), tipo: 'LEAD', cliente: name, telefono: phone, direccion: mapLink, detalle: date + ' ' + time, monto: '200' };
+            const data = { fecha: new Date().toLocaleString(), tipo: 'LEAD', cliente: name, telefono: phone, direccion: address + ' [MAPA: ' + mapLink + ']', detalle: date + ' ' + time, monto: '200' };
             fetch(URL_INTERIORS, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
             window.open(`https://wa.me/51989551575?text=${encodeURIComponent(msg)}`, '_blank');
         }

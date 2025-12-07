@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ALONZO BARANDIARAN | Master Site v21</title>
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@200;300;400;500;600&family=Syncopate:wght@400;700&display=swap');
+
+        :root { --dark-bg: #080808; --dark-sec: #111; --light-bg: #F9F9F9; --gold: #C5A059; }
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { font-family: 'Outfit', sans-serif; background: var(--dark-bg); overflow-x: hidden; width: 100%; position: relative; }
+        a, button, select, input, textarea { cursor: pointer; text-decoration: none; border: none; outline: none; transition: 0.3s; }
+        input, select, textarea { border-radius: 0; -webkit-appearance: none; }
+
+        /* UI BASE */
+        @media (max-width: 768px) {
+            .ph-title { font-size: 2rem !important; }
+            .container { padding: 0 20px !important; }
+            .gate-title { font-size: 1.8rem !important; }
+        }
+
+        #menuOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.98); z-index: 2000; display: flex; flex-direction: column; justify-content: center; align-items: center; opacity: 0; pointer-events: none; transition: 0.5s; backdrop-filter: blur(10px); }
+        #menuOverlay.open { opacity: 1; pointer-events: auto; }
+        .menu-link { font-family: 'Syncopate'; font-size: 1.5rem; color: white; margin: 20px 0; text-transform: uppercase; letter-spacing: 2px; }
+        .close-menu { position: absolute; top: 20px; right: 20px; font-size: 2rem; color: white; padding: 10px; cursor: pointer; }
+
+        .navbar { position: fixed; top: 0; width: 100%; z-index: 1000; display: flex; justify-content: space-between; align-items: center; padding: 20px 5%; mix-blend-mode: difference; color: white; background: linear-gradient(to bottom, rgba(0,0,0,0.6), transparent); }
+        .nav-logo { font-family: 'Syncopate'; font-weight: 700; letter-spacing: 1px; font-size: 0.8rem; cursor: pointer; }
+        .nav-actions { display: flex; gap: 15px; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; align-items: center; }
+        .cart-badge { background: var(--gold); color: black; padding: 2px 6px; border-radius: 50%; margin-left: 5px; font-size: 0.6rem; }
+
+        #gateway { height: 100vh; width: 100%; position: fixed; top: 0; left: 0; z-index: 900; display: flex; transition: transform 0.8s cubic-bezier(0.77, 0, 0.175, 1); }
+        @media (max-width: 768px) { #gateway { flex-direction: column; } }
+        .gate-side { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; transition: flex 0.6s ease; overflow: hidden; position: relative; padding: 20px; text-align: center; }
+        .gate-left { background: #050505; color: white; border-right: 1px solid rgba(255,255,255,0.1); }
+        .gate-right { background: #F0F0F0; color: black; border-top: 1px solid rgba(0,0,0,0.1); }
+        .gate-title { font-family: 'Syncopate'; font-size: 2.5rem; text-transform: uppercase; margin-bottom: 10px; z-index: 2; line-height: 1.1; }
+        .gate-sub { font-size: 0.7rem; letter-spacing: 3px; text-transform: uppercase; opacity: 0.7; z-index: 2; margin-bottom: 20px; }
+        .btn-enter { padding: 12px 30px; border: 1px solid currentColor; background: transparent; color: inherit; font-family: 'Syncopate'; font-size: 0.6rem; letter-spacing: 2px; z-index: 2; }
+        @media (min-width: 769px) { .gate-side:hover { flex: 1.5; } .btn-enter { opacity: 0; transform: translateY(20px); } .gate-side:hover .btn-enter { opacity: 1; transform: translateY(0); } }
+        .center-logo { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 10; mix-blend-mode: exclusion; pointer-events: none; }
+        .center-logo svg { width: 80px; height: 80px; fill: white; }
+
+        .page-section { display: none; min-height: 100vh; padding: 100px 5% 60px 5%; opacity: 0; transition: opacity 1s ease; }
+        .page-visible { display: block; opacity: 1; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .ph-title { font-family: 'Syncopate'; font-size: 3rem; text-transform: uppercase; margin-bottom: 40px; line-height: 1.1; }
+        .ph-sub { font-size: 0.8rem; letter-spacing: 4px; text-transform: uppercase; opacity: 0.6; margin-bottom: 10px; display: block; }
+        .section-separator { margin: 80px 0; border-top: 1px solid rgba(255,255,255,0.1); }
+
+        /* INTERIORS STYLES */
+        #interiors { background: #080808; color: #E0E0E0; }
+        .services-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-bottom: 80px; }
+        .srv-card { background: var(--dark-sec); border: 1px solid #222; padding: 30px; transition: 0.4s; }
+        .srv-tag { font-size: 0.6rem; color: var(--gold); margin-bottom: 10px; display: block; letter-spacing: 1px; font-weight: bold; text-transform: uppercase; }
+        .srv-head { font-family: 'Syncopate'; font-size: 1.1rem; margin-bottom: 10px; color: white; }
+        .srv-txt { font-size: 0.85rem; color: #888; line-height: 1.6; }
+        
+        .projects-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 40px; }
+        .project-item { margin-bottom: 30px; cursor: pointer; }
+        .prj-thumb { height: 350px; background: #111; border: 1px solid #222; margin-bottom: 15px; position: relative; overflow: hidden; }
+        .prj-cat { font-size: 0.6rem; color: var(--gold); letter-spacing: 1px; text-transform: uppercase; }
+        .prj-name { font-family: 'Syncopate'; font-size: 1rem; margin: 5px 0; }
+
+        /* FORMULARIOS & CALENDARIO */
+        .diagnosis-box { background: var(--dark-sec); border: 1px solid #333; padding: 40px 20px; max-width: 650px; margin: 0 auto; text-align: center; }
+        .input-dark { background: #050505; border: 1px solid #333; color: white; padding: 15px; width: 100%; font-family: 'Outfit'; margin-bottom: 15px; font-size: 16px; }
+        .input-dark:focus { border-color: var(--gold); }
+        .textarea-dark { height: 80px; resize: none; }
+        .calendar-frame { width: 100%; height: 350px; border: 1px solid #333; margin-bottom: 20px; background: #fff; filter: invert(1) hue-rotate(180deg); }
+        
+        /* BOTONES GPS UNIFICADOS */
+        .gps-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
+        .gps-card {
+            background: transparent; border: 1px solid #444; color: #888; padding: 15px;
+            text-align: center; font-size: 0.7rem; font-weight: bold; cursor: pointer; transition: 0.3s;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+        }
+        .gps-card:hover { border-color: var(--gold); color: white; }
+        .gps-card.active { background: #222; color: white; border-color: var(--gold); }
+        
+        /* PAGOS GRID */
+        .pay-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; margin-bottom: 20px; }
+        .pay-btn-opt { 
+            background: #222; border: 1px solid #444; color: #888; padding: 15px; 
+            font-size: 0.7rem; font-weight: bold; text-transform: uppercase; transition: 0.3s; text-align: center;
+        }
+        .pay-btn-opt.active { border-color: var(--gold); color: white; background: #000; }
+        .pay-btn-opt.full-width { grid-column: span 2; background: #00457C; color: white; border: none; } 
+
+        /* MAP CONTAINERS */
+        .map-wrapper { width: 100%; height: 250px; position: relative; border: 1px solid #333; margin-bottom: 20px; z-index: 1; display: none; } /* Oculto por defecto hasta elegir */
+        .map-canvas { width: 100%; height: 100%; }
+        .map-fullscreen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 5000; border: none; }
+        .map-expand-btn { position: absolute; top: 10px; right: 10px; z-index: 1000; background: white; color: black; padding: 5px 10px; font-size: 0.6rem; font-weight: bold; border: 1px solid #ccc; }
+
+        /* SHOP STYLES */
+        #collection { background: var(--light-bg); color: #111; }
+        .shop-hero { height: 300px; background: #e0e0e0; display: flex; align-items: center; justify-content: center; margin-bottom: 40px; position: relative; text-align: center; padding: 20px; }
+        .filter-container { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 10px; margin-bottom: 40px; -webkit-overflow-scrolling: touch; }
+        .filter-btn { padding: 8px 20px; border: 1px solid #ccc; border-radius: 20px; flex-shrink: 0; font-size: 0.7rem; text-transform: uppercase; font-weight: 600; background: transparent; white-space: nowrap;}
+        .filter-btn.active { background: black; color: white; border-color: black; }
+        .shop-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 20px; }
+        .prod-img { height: 220px; background: white; margin-bottom: 10px; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; border: 1px solid #eee; }
+        .prod-name { font-family: 'Syncopate'; font-weight: 700; font-size: 0.8rem; line-height: 1.2; }
+        .prod-price { font-weight: 400; font-size: 0.8rem; margin-top: 5px; color: #555; }
+        .btn-mobile-buy { display: block; width: 100%; border: 1px solid #eee; background: white; padding: 8px; font-size: 0.7rem; font-weight: bold; margin-top: 10px; text-transform: uppercase; }
+        .btn-mobile-buy:hover { background: #000; color: white; }
+        
+        .shape-tv { width: 60%; height: 25%; background: #333; }
+        .shape-sofa { width: 70%; height: 35%; background: #999; border-radius: 4px; }
+        .shape-table { width: 40%; height: 40%; background: #C5A059; border-radius: 50%; }
+
+        /* MODALS */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 3000; display: none; justify-content: center; align-items: center; padding: 20px; }
+        .modal-card { background: white; width: 100%; max-width: 500px; padding: 30px; position: relative; max-height: 90vh; overflow-y: auto; }
+        .modal-close { position: absolute; top: 10px; right: 15px; font-size: 2rem; cursor: pointer; z-index: 5002; }
+
+        /* CHECKOUT ELEMENTS */
+        .checkout-label { font-size: 0.7rem; font-weight: bold; text-transform: uppercase; color: #888; margin-bottom: 5px; display: block; margin-top: 15px; }
+        .checkout-input { width: 100%; padding: 12px; border: 1px solid #ddd; background: #fff; font-family: 'Outfit'; margin-bottom: 5px; font-size: 16px; }
+        .delivery-option { border: 1px solid #ddd; padding: 12px; margin-bottom: 10px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem; }
+        .delivery-option.selected { border: 1px solid black; background: #f9f9f9; }
+        .shipping-result { background: #f9f9f9; padding: 15px; margin-top: 10px; font-size: 0.8rem; border-left: 4px solid var(--gold); color: #333; text-align: left; display: none;}
+
+        /* ADDED MODAL */
+        .added-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px; }
+        .btn-secondary { background: white; border: 1px solid black; color: black; padding: 12px; font-weight: bold; font-size: 0.8rem; }
+        .btn-primary { background: black; border: 1px solid black; color: white; padding: 12px; font-weight: bold; font-size: 0.8rem; width: 100%; }
+
+        /* CARRITO */
+        .cart-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #eee; }
+        .qty-control { display: flex; align-items: center; gap: 10px; background: #eee; padding: 2px 10px; border-radius: 15px; }
+        .qty-btn { font-size: 1.2rem; cursor: pointer; user-select: none; }
+
+        /* PAGOS LIGHT MODE (CHECKOUT) */
+        .pay-light-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+        .pay-light-btn { border: 1px solid #ccc; padding: 15px; text-align: center; font-weight: bold; font-size: 0.7rem; cursor: pointer; }
+        .pay-light-btn.active { border: 2px solid black; background: #f0f0f0; }
+        .pay-visa { grid-column: span 2; background: #00457C; color: white; border: none; }
+
+        /* GPS LIGHT MODE */
+        .gps-light-card { border: 1px solid #ccc; color: #333; }
+        .gps-light-card:hover { border-color: black; }
+        .gps-light-card.active { background: #f0f0f0; border-color: black; }
+
+        .back-btn { position: fixed; bottom: 20px; right: 20px; width: 50px; height: 50px; background: var(--gold); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; z-index: 1000; opacity: 0; pointer-events: none; transition: 0.3s; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+        .back-visible { opacity: 1; pointer-events: auto; }
+        .product.hide { display: none; }
+        
+        .map-modal-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 4000; display: none; flex-direction: column; }
+        .map-modal-header { padding: 15px; background: #222; color: white; display: flex; justify-content: space-between; align-items: center; }
+        .map-full-canvas { flex: 1; width: 100%; }
+    </style>
+</head>
+<body>
+
+    <div id="menuOverlay">
+        <div class="close-menu" onclick="toggleMenu()">×</div>
+        <a href="#" class="menu-link" onclick="goHome(); toggleMenu()">Home</a>
+        <a href="#" class="menu-link" onclick="openSection('interiors'); toggleMenu()">AB Studio</a>
+        <a href="#" class="menu-link" onclick="openSection('collection'); toggleMenu()">AB Shop</a>
+    </div>
+
+    <nav class="navbar">
+        <div class="nav-logo" onclick="goHome()">ALONZO BARANDIARAN</div>
+        <div class="nav-actions">
+            <span onclick="openCart()" style="cursor: pointer;">CART <span id="cartCount" class="cart-badge">0</span></span>
+            <span onclick="toggleMenu()" style="cursor: pointer; margin-left: 10px;">MENU</span>
+        </div>
+    </nav>
+
+    <div id="gateway">
+        <div class="center-logo"><svg viewBox="0 0 100 100"><polygon points="20,90 45,20 70,90 55,90 45,55 35,90" /><path d="M45,20 A 35,35 0 0 1 80,55 L 80,90 L 65,90 L 65,55 A 20,20 0 0 0 45,35 Z" /></svg></div>
+        <div class="gate-side gate-left" onclick="openSection('interiors')">
+            <div class="gate-title">AB Interiors</div>
+            <span class="gate-sub">Estudio de Diseño</span>
+            <button class="btn-enter">Ver Servicios</button>
+        </div>
+        <div class="gate-side gate-right" onclick="openSection('collection')">
+            <div class="gate-title">AB Collection</div>
+            <span class="gate-sub">Tienda Online</span>
+            <button class="btn-enter" style="border-color: black;">Ver Catálogo</button>
+        </div>
+    </div>
+
+    <section id="interiors" class="page-section">
+        <div class="container">
+            <div class="ph-title">Arquitectura<br>Residencial</div>
+            
+            <span class="ph-sub">Featured Projects</span>
+            <div class="projects-grid">
+                <div class="project-item"><div class="prj-thumb"></div><div class="prj-cat">REMODELACIÓN</div><div class="prj-name">Penthouse San Isidro</div></div>
+                <div class="project-item"><div class="prj-thumb" style="background:#1a1a1a;"></div><div class="prj-cat">COCINA</div><div class="prj-name">Loft Barranco</div></div>
+            </div>
+
+            <div class="section-separator"></div>
+
+            <div class="services-grid">
+                <div class="srv-card"><div class="srv-head">Cocinas</div><p class="srv-txt">Diseño integral.</p></div>
+                <div class="srv-card"><div class="srv-head">Closets</div><p class="srv-txt">Sistemas boutique.</p></div>
+                <div class="srv-card"><div class="srv-head">TV Units</div><p class="srv-txt">Muebles flotantes.</p></div>
+            </div>
+
+            <div class="section-separator"></div>
+
+            <div class="diagnosis-box">
+                <h2 style="font-family:'Syncopate'; font-size:1.5rem; margin-bottom:10px; color:white;">Diagnóstico AB</h2>
+                <p style="color:#888; margin-bottom:20px;">Agenda visita (S/. 200).</p>
+                <form onsubmit="sendDiagnosis(event)">
+                    <input id="diagName" type="text" class="input-dark" placeholder="Nombre Completo" required>
+                    <input id="diagPhone" type="tel" class="input-dark" placeholder="WhatsApp" required>
+                    
+                    <label class="checkout-label" style="text-align:left; color:white; margin-top:20px;">Disponibilidad</label>
+                    <iframe class="calendar-frame" src="https://calendar.google.com/calendar/embed?src=alonzo-26%40hotmail.com&ctz=America%2FLima" style="border: 0" frameborder="0" scrolling="no"></iframe>
+                    
+                    <div style="display:grid; grid-template-columns: 2fr 1fr; gap:10px;">
+                        <input id="diagDate" type="date" class="input-dark" required>
+                        <select id="diagTime" class="input-dark" required>
+                            <option value="">Hora</option>
+                            <option>9:00 AM</option><option>10:00 AM</option><option>11:00 AM</option>
+                            <option>12:00 PM</option><option>1:00 PM</option><option>3:00 PM</option>
+                            <option>4:00 PM</option><option>5:00 PM</option><option>6:00 PM</option>
+                        </select>
+                    </div>
+
+                    <label class="checkout-label" style="text-align:left; color:white; margin-top:20px;">Ubicación (Selecciona Uno)</label>
+                    <div class="gps-grid">
+                        <div id="btnDiagGPS" class="gps-card" onclick="useGPS('diag')">📍 USAR MI GPS</div>
+                        <div id="btnDiagMap" class="gps-card" onclick="openMapModal('diag')">🗺 ABRIR MAPA</div>
+                    </div>
+                    
+                    <div id="mapWrapperDiag" class="map-wrapper"><div id="mapCanvasDiag" class="map-canvas"></div></div>
+                    
+                    <input id="diagAddress" type="text" class="input-dark" placeholder="Referencia Escrita" required>
+                    <input id="diagCoords" type="hidden"> 
+
+                    <select id="diagType" class="input-dark">
+                        <option value="Cocina">Interés: Cocina</option>
+                        <option value="Closet">Interés: Closet</option>
+                        <option value="TV Unit">Interés: Centro TV</option>
+                        <option value="Integral">Interés: Obra Completa</option>
+                    </select>
+
+                    <label class="checkout-label" style="text-align:left; color:white; margin-top:20px;">Pago Visita</label>
+                    <div class="pay-grid">
+                        <div id="payYapeDiag" class="pay-btn-opt active" onclick="selectPayDiag('YAPE')">YAPE / PLIN</div>
+                        <div id="payTransfDiag" class="pay-btn-opt" onclick="selectPayDiag('TRANSF')">TRANSFERENCIA</div>
+                        <div id="payCardDiag" class="pay-btn-opt full-width" onclick="selectPayDiag('CARD')">PAGAR CON VISA / TARJETA</div>
+                    </div>
+
+                    <button type="submit" style="background: white; color: black; padding: 15px; width:100%; font-weight:bold; font-family:'Syncopate'; margin-top: 10px;">AGENDAR VISITA</button>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <section id="collection" class="page-section">
+        <div class="container">
+            <div class="shop-hero">
+                <div>
+                    <h2 style="font-family:'Syncopate'; font-size:1.5rem; margin:10px 0;">The Monolith</h2>
+                    <button class="btn-primary" onclick="addToCart('Mesa Monolith', 3500)">AGREGAR</button>
+                </div>
+            </div>
+            <div class="filter-container">
+                <button class="filter-btn active" onclick="filterSelection('all')">Todo</button>
+                <button class="filter-btn" onclick="filterSelection('tv')">TV Units</button>
+                <button class="filter-btn" onclick="filterSelection('sofa')">Sofás</button>
+                <button class="filter-btn" onclick="filterSelection('mesa')">Mesas</button>
+            </div>
+            <div class="shop-grid">
+                <div class="product tv"><div class="prod-img"><div class="shape-tv"></div></div><div style="margin-top:10px;"><b>TV Horizon</b><br>S/. 2,400</div><button class="btn-mobile-buy" onclick="addToCart('TV Unit Horizon', 2400)">AGREGAR</button></div>
+                <div class="product sofa"><div class="prod-img"><div class="shape-sofa"></div></div><div style="margin-top:10px;"><b>Sofá Cloud</b><br>S/. 4,200</div><button class="btn-mobile-buy" onclick="addToCart('Sofá Cloud', 4200)">AGREGAR</button></div>
+                <div class="product mesa"><div class="prod-img"><div class="shape-table"></div></div><div style="margin-top:10px;"><b>Mesa Orbit</b><br>S/. 1,800</div><button class="btn-mobile-buy" onclick="addToCart('Mesa Orbit', 1800)">AGREGAR</button></div>
+            </div>
+        </div>
+    </section>
+
+    <div id="addedModal" class="modal-overlay">
+        <div class="modal-card" style="text-align: center;">
+            <h3 style="font-family:'Syncopate';">¡Agregado!</h3>
+            <div class="added-actions">
+                <button class="btn-secondary" onclick="closeAddedModal()">SEGUIR COMPRANDO</button>
+                <button class="btn-primary" onclick="goToCart()">IR AL CARRITO</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="cartModal" class="modal-overlay">
+        <div class="modal-card">
+            <div class="modal-close" onclick="closeCart()">×</div>
+            <h3 style="font-family:'Syncopate'; margin-bottom:20px;">TU BOLSA</h3>
+            <div id="cartItemsContainer"></div>
+            <div style="text-align:right; font-weight:bold; margin-top:20px; font-size:1.2rem;">Total: <span id="cartTotalDisplay">S/. 0</span></div>
+            <button class="btn-primary" style="width:100%; margin-top:20px;" onclick="goToCheckout()">CHECKOUT</button>
+        </div>
+    </div>
+
+    <div id="checkoutModal" class="modal-overlay">
+        <div class="modal-card">
+            <div class="modal-close" onclick="closeCheckout()">×</div>
+            <h3 style="font-family:'Syncopate'; margin-bottom:10px;">Checkout</h3>
+            
+            <form onsubmit="sendOrder(event)">
+                <input id="orderName" type="text" class="checkout-input" placeholder="Nombre Completo" required>
+                <input id="orderPhone" type="tel" class="checkout-input" placeholder="WhatsApp" required>
+                
+                <div style="font-size:0.8rem; font-weight:bold; color:#888; margin-top:15px;">UBICACIÓN ENTREGA (Elige una):</div>
+                <div class="gps-grid">
+                    <div id="btnCheckGPS" class="gps-card gps-light-card" onclick="useGPS('check')">📍 USAR MI GPS</div>
+                    <div id="btnCheckMap" class="gps-card gps-light-card" onclick="openMapModal('check')">🗺 ABRIR MAPA</div>
+                </div>
+                
+                <div id="mapWrapperCheck" class="map-wrapper"><div id="mapCanvasCheck" class="map-canvas"></div></div>
+
+                <div id="shippingResult" class="shipping-result">
+                    Distancia: <strong id="distVal">0 km</strong><br>
+                    Flete: <strong id="shipVal">S/. 0.00</strong>
+                </div>
+
+                <input id="orderAddress" type="text" class="checkout-input" placeholder="Referencia escrita" required style="margin-top:10px;">
+                <input id="orderCoords" type="hidden">
+
+                <label class="checkout-label">Método de Entrega</label>
+                <div class="delivery-option selected" id="optDelivery" onclick="setDelivery('vip')"><strong>Delivery Programado</strong></div>
+                <div class="delivery-option" id="optPickup" onclick="setDelivery('pickup')"><strong>Recojo en Taller (VES)</strong></div>
+
+                <label class="checkout-label">Método de Pago</label>
+                <div class="pay-light-grid">
+                    <div id="payYapeShop" class="pay-light-btn active" onclick="selectPayShop('YAPE')">YAPE / PLIN</div>
+                    <div id="payTransfShop" class="pay-light-btn" onclick="selectPayShop('TRANSF')">TRANSFERENCIA</div>
+                    <div id="payCardShop" class="pay-light-btn pay-visa" onclick="selectPayShop('CARD')">PAGAR CON VISA</div>
+                </div>
+
+                <button type="submit" class="btn-primary" style="width:100%; margin-top:20px;">CONFIRMAR PEDIDO</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="mapModal" class="map-modal-container">
+        <div class="map-modal-header">
+            <span>MARCA TU UBICACIÓN</span>
+            <button onclick="confirmMapLocation()" style="background:white; color:black; padding:5px 10px; font-weight:bold;">CONFIRMAR</button>
+        </div>
+        <div id="mapFullCanvas" class="map-full-canvas"></div>
+    </div>
+
+    <button class="back-btn" onclick="goHome()">↑</button>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        const URL_COLLECTION = 'https://script.google.com/macros/s/AKfycbxKB4C1RdNE9ONtjx9O4-JoEy4Pl7rqIfIvmWJfjUegbrXrLKWo6D2WSohhjtX6TNq4/exec';
+        const URL_INTERIORS = 'https://script.google.com/macros/s/AKfycbw7Ja6I5qExj4ur7a7SxjGPBjHwcUjjO2Oea6ZTKpbIxqURTXs9tM1yD2hz7jXqDGC8cg/exec';
+
+        let cart = [];
+        let deliveryPrice = 0;
+        let selectedPayDiag = 'YAPE';
+        let selectedPayShop = 'YAPE';
+        let map, marker, activeMapContext;
+        const VES_LAT = -12.213; const VES_LNG = -76.938; 
+
+        // UI Logic
+        function openSection(id) {
+            document.getElementById('gateway').style.transform = 'translateY(-100%)';
+            document.querySelector('.back-btn').classList.add('back-visible');
+            setTimeout(() => { document.getElementById(id).classList.add('page-visible'); }, 400);
+        }
+        function goHome() {
+            document.getElementById('gateway').style.transform = 'translateY(0)';
+            document.querySelector('.back-btn').classList.remove('back-visible');
+            document.querySelectorAll('.page-section').forEach(s => s.classList.remove('page-visible'));
+        }
+        function toggleMenu() { document.getElementById('menuOverlay').classList.toggle('open'); }
+        function filterSelection(c) {
+            const p = document.getElementsByClassName("product");
+            const b = document.getElementsByClassName("filter-btn");
+            for(let btn of b) { btn.classList.remove("active"); if(btn.innerText.toLowerCase().includes(c) || (c==='all' && btn.innerText==='TODO')) btn.classList.add("active"); }
+            for(let i=0; i<p.length; i++) {
+                if(c==='all') p[i].classList.remove("hide");
+                else { if(p[i].classList.contains(c)) p[i].classList.remove("hide"); else p[i].classList.add("hide"); }
+            }
+        }
+
+        // --- CARRITO ---
+        function addToCart(name, price) {
+            let existing = cart.find(item => item.name === name);
+            if(existing) existing.qty++; else cart.push({ name: name, price: price, qty: 1 });
+            updateCartCounter();
+            document.getElementById('addedModal').style.display = 'flex';
+        }
+        function closeAddedModal() { document.getElementById('addedModal').style.display = 'none'; }
+        function updateCartCounter() { document.getElementById('cartCount').innerText = cart.reduce((sum, item) => sum + item.qty, 0); }
+        function goToCart() { closeAddedModal(); openCart(); }
+        
+        function openCart() {
+            const container = document.getElementById('cartItemsContainer');
+            container.innerHTML = '';
+            let total = 0;
+            if(cart.length === 0) container.innerHTML = '<p>Carrito vacío.</p>';
+            else {
+                cart.forEach((item, index) => {
+                    let itemTotal = item.price * item.qty;
+                    total += itemTotal;
+                    container.innerHTML += `<div class="cart-item"><div><b>${item.name}</b><br>S/. ${item.price}</div><div class="qty-control"><span class="qty-btn" onclick="updateQty(${index}, -1)">-</span><span>${item.qty}</span><span class="qty-btn" onclick="updateQty(${index}, 1)">+</span></div></div>`;
+                });
+            }
+            document.getElementById('cartTotalDisplay').innerText = 'S/. ' + total;
+            document.getElementById('cartModal').style.display = 'flex';
+        }
+        function closeCart() { document.getElementById('cartModal').style.display = 'none'; }
+        function updateQty(index, change) { cart[index].qty += change; if(cart[index].qty <= 0) cart.splice(index, 1); updateCartCounter(); openCart(); }
+        function goToCheckout() { if(cart.length === 0) return; closeCart(); document.getElementById('checkoutModal').style.display = 'flex'; }
+        function closeCheckout() { document.getElementById('checkoutModal').style.display = 'none'; }
+
+        // --- PAGOS (BOTONES) ---
+        function selectPayDiag(method) {
+            selectedPayDiag = method;
+            document.querySelectorAll('#interiors .pay-btn-opt').forEach(el => el.classList.remove('active'));
+            if(method === 'YAPE') document.getElementById('payYapeDiag').classList.add('active');
+            if(method === 'TRANSF') document.getElementById('payTransfDiag').classList.add('active');
+            if(method === 'CARD') document.getElementById('payCardDiag').classList.add('active');
+        }
+        function selectPayShop(method) {
+            selectedPayShop = method;
+            document.querySelectorAll('#checkoutModal .pay-light-btn').forEach(el => el.classList.remove('active'));
+            if(method === 'YAPE') document.getElementById('payYapeShop').classList.add('active');
+            if(method === 'TRANSF') document.getElementById('payTransfShop').classList.add('active');
+            if(method === 'CARD') document.getElementById('payCardShop').classList.add('active');
+        }
+
+        // --- MAPS ---
+        function useGPS(context) {
+            // Reset visually
+            document.getElementById('btn'+(context==='diag'?'Diag':'Check')+'Map').classList.remove('active');
+            const btn = document.getElementById('btn'+(context==='diag'?'Diag':'Check')+'GPS');
+            btn.classList.add('active'); btn.innerText = "⏳";
+            
+            // Hide Map if open
+            document.getElementById(context==='diag'?'mapWrapperDiag':'mapWrapperCheck').style.display = 'none';
+
+            if (!navigator.geolocation) { alert("GPS no soportado"); return; }
+            navigator.geolocation.getCurrentPosition(pos => {
+                const lat = pos.coords.latitude; const lng = pos.coords.longitude;
+                const link = `http://maps.google.com/?q=${lat},${lng}`;
+                document.getElementById(context === 'diag' ? 'diagCoords' : 'orderCoords').value = link;
+                btn.innerText = "✅ LISTO";
+                if(context === 'check') calculateShipping({lat, lng});
+            }, () => { alert("Error GPS."); btn.innerText = "❌ ERROR"; });
+        }
+
+        function openMapModal(context) {
+            activeMapContext = context;
+            document.getElementById('btn'+(context==='diag'?'Diag':'Check')+'GPS').classList.remove('active');
+            document.getElementById('btn'+(context==='diag'?'Diag':'Check')+'Map').classList.add('active');
+            
+            document.getElementById('mapModal').style.display = 'flex';
+            setTimeout(() => {
+                if(!map) {
+                    map = L.map('mapFullCanvas').setView([-12.046, -77.042], 12);
+                    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png').addTo(map);
+                    marker = L.marker([-12.046, -77.042], {draggable: true}).addTo(map);
+                }
+                map.invalidateSize();
+            }, 200);
+        }
+
+        function confirmMapLocation() {
+            const pos = marker.getLatLng();
+            const link = `http://maps.google.com/?q=${pos.lat},${pos.lng}`;
+            document.getElementById(activeMapContext === 'diag' ? 'diagCoords' : 'orderCoords').value = link;
+            document.getElementById('mapModal').style.display = 'none';
+            
+            // Show preview mini map logic here could be added, but for now we just process
+            if(activeMapContext === 'check') calculateShipping(pos);
+        }
+
+        function calculateShipping(latlng) {
+            const R = 6371; 
+            const dLat = (latlng.lat - VES_LAT) * Math.PI / 180;
+            const dLon = (latlng.lng - VES_LNG) * Math.PI / 180;
+            const a = Math.sin(dLat/2)*Math.sin(dLat/2) + Math.cos(VES_LAT*Math.PI/180)*Math.cos(latlng.lat*Math.PI/180)*Math.sin(dLon/2)*Math.sin(dLon/2);
+            const d = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            let p = 0; if(d<5) p=60; else if(d<15) p=80; else if(d<25) p=100; else if(d<40) p=150;
+            deliveryPrice = p;
+            const res = document.getElementById('shippingResult');
+            res.style.display = 'block';
+            document.getElementById('distVal').innerText = d.toFixed(1) + ' km';
+            document.getElementById('shipVal').innerText = p>0 ? 'S/. '+p : 'A Cotizar';
+        }
+        function setDelivery(type) { deliveryType = type; }
+
+        // --- SEND ---
+        function sendOrder(e) {
+            e.preventDefault();
+            const name = document.getElementById('orderName').value;
+            const phone = document.getElementById('orderPhone').value;
+            const address = document.getElementById('orderAddress').value;
+            const mapLink = document.getElementById('orderCoords').value;
+            
+            if(!name || !phone || !address || !mapLink) { if(!confirm("⚠️ Faltan datos (Mapa/Campos). ¿Enviar igual?")) return; }
+
+            let itemList = ""; let itemsString = ""; let subtotal = 0;
+            cart.forEach(i => { itemList += `▫ ${i.qty}x ${i.name}\n`; itemsString += `${i.qty}x ${i.name}, `; subtotal += i.price * i.qty; });
+            const total = subtotal + deliveryPrice;
+
+            const msg = `✨ *ORDEN DE COMPRA | AB* ✨\n\n` +
+                        `👤 *CLIENTE:* ${name}\n` +
+                        `📱 *CELULAR:* ${phone}\n` +
+                        `📍 *DIRECCIÓN:* ${address}\n` +
+                        `🗺 *MAPA:* ${mapLink}\n` +
+                        `━━━━━━━━━━━━━━━\n` +
+                        `📋 *PEDIDO:*\n${itemList}\n` +
+                        `🚚 *ENVÍO:* S/. ${deliveryPrice}\n` +
+                        `💰 *TOTAL A PAGAR:* S/. ${total}\n` +
+                        `💳 *MÉTODO:* ${selectedPayShop}\n\n` +
+                        `📎 *Adjunto mi comprobante (FOTO)* 👇`;
+            
+            const data = { fecha: new Date().toLocaleString(), tipo: 'VENTA', cliente: name, telefono: phone, direccion: address, detalle: itemsString, monto: total };
+            fetch(URL_COLLECTION, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+            window.open(`https://wa.me/51989551575?text=${encodeURIComponent(msg)}`, '_blank');
+            closeCheckout(); cart = []; updateCartCounter();
+        }
+
+        function sendDiagnosis(e) {
+            e.preventDefault();
+            const name = document.getElementById('diagName').value;
+            const phone = document.getElementById('diagPhone').value;
+            const date = document.getElementById('diagDate').value;
+            const time = document.getElementById('diagTime').value;
+            const type = document.getElementById('diagType').value;
+            const mapLink = document.getElementById('diagCoords').value;
+            const address = document.getElementById('diagAddress').value;
+            
+            if(!name || !phone || !date || !address || !mapLink) { if(!confirm("⚠️ Faltan datos (Mapa/Campos). ¿Enviar igual?")) return; }
+
+            const d = new Date(date);
+            const dStr = d.toISOString().replace(/-|:|\.\d\d\d/g,""); 
+            const calLink = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=Visita+${name}&dates=${dStr}/${dStr}&details=Proyecto:${type}`;
+
+            const msg = `🏛 *DIAGNÓSTICO | AB STUDIO* 🏛\n\n` +
+                        `👤 *CLIENTE:* ${name}\n` +
+                        `🗓 *FECHA:* ${date} - ${time}\n` +
+                        `🗺 *MAPA:* ${mapLink}\n` +
+                        `📍 *REF:* ${address}\n` +
+                        `📱 *TELÉFONO:* ${phone}\n` +
+                        `💳 *MÉTODO:* ${selectedPayDiag}\n\n` +
+                        `📲 *AGENDAR:* ${calLink}\n\n` +
+                        `📎 *Adjunto comprobante S/. 200* 👇`;
+
+            const data = { fecha: new Date().toLocaleString(), tipo: 'LEAD', cliente: name, telefono: phone, direccion: mapLink, detalle: date + ' ' + time, monto: '200' };
+            fetch(URL_INTERIORS, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+            window.open(`https://wa.me/51989551575?text=${encodeURIComponent(msg)}`, '_blank');
+        }
+    </script>
+</body>
+</html>

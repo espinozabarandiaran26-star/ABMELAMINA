@@ -93,7 +93,7 @@
         .pay-btn-opt.full-width { grid-column: span 2; background: #00457C; color: white; border: none; } 
 
         /* MAP CONTAINERS */
-        .map-wrapper { width: 100%; height: 250px; position: relative; border: 1px solid #333; margin-bottom: 20px; z-index: 1; display: none; } /* Oculto por defecto hasta elegir */
+        .map-wrapper { width: 100%; height: 250px; position: relative; border: 1px solid #333; margin-bottom: 20px; z-index: 1; display: none; }
         .map-canvas { width: 100%; height: 100%; }
         .map-fullscreen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 5000; border: none; }
         .map-expand-btn { position: absolute; top: 10px; right: 10px; z-index: 1000; background: white; color: black; padding: 5px 10px; font-size: 0.6rem; font-weight: bold; border: 1px solid #ccc; }
@@ -125,7 +125,7 @@
         .checkout-input { width: 100%; padding: 12px; border: 1px solid #ddd; background: #fff; font-family: 'Outfit'; margin-bottom: 5px; font-size: 16px; }
         .delivery-option { border: 1px solid #ddd; padding: 12px; margin-bottom: 10px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem; }
         .delivery-option.selected { border: 1px solid black; background: #f9f9f9; }
-        .shipping-result { background: #f9f9f9; padding: 15px; margin-top: 10px; font-size: 0.8rem; border-left: 4px solid var(--gold); color: #333; text-align: left; display: none;}
+        .shipping-result { background: #f9f9f9; padding: 15px; margin-top: 10px; font-size: 0.8rem; border-left: 4px solid var(--gold); color: #333; text-align: left;}
 
         /* ADDED MODAL */
         .added-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px; }
@@ -267,12 +267,14 @@
                     <button class="btn-primary" onclick="addToCart('Mesa Monolith', 3500)">AGREGAR</button>
                 </div>
             </div>
+            
             <div class="filter-container">
                 <button class="filter-btn active" onclick="filterSelection('all')">Todo</button>
                 <button class="filter-btn" onclick="filterSelection('tv')">TV Units</button>
                 <button class="filter-btn" onclick="filterSelection('sofa')">Sofás</button>
                 <button class="filter-btn" onclick="filterSelection('mesa')">Mesas</button>
             </div>
+
             <div class="shop-grid">
                 <div class="product tv"><div class="prod-img"><div class="shape-tv"></div></div><div style="margin-top:10px;"><b>TV Horizon</b><br>S/. 2,400</div><button class="btn-mobile-buy" onclick="addToCart('TV Unit Horizon', 2400)">AGREGAR</button></div>
                 <div class="product sofa"><div class="prod-img"><div class="shape-sofa"></div></div><div style="margin-top:10px;"><b>Sofá Cloud</b><br>S/. 4,200</div><button class="btn-mobile-buy" onclick="addToCart('Sofá Cloud', 4200)">AGREGAR</button></div>
@@ -318,7 +320,7 @@
                 
                 <div id="mapWrapperCheck" class="map-wrapper"><div id="mapCanvasCheck" class="map-canvas"></div></div>
 
-                <div id="shippingResult" class="shipping-result">
+                <div id="shippingResult" class="shipping-result" style="display:none;">
                     Distancia: <strong id="distVal">0 km</strong><br>
                     Flete: <strong id="shipVal">S/. 0.00</strong>
                 </div>
@@ -433,9 +435,8 @@
             if(method === 'CARD') document.getElementById('payCardShop').classList.add('active');
         }
 
-        // --- MAPS ---
+        // --- MAPAS (Exclusive Logic) ---
         function useGPS(context) {
-            // Reset visually
             document.getElementById('btn'+(context==='diag'?'Diag':'Check')+'Map').classList.remove('active');
             const btn = document.getElementById('btn'+(context==='diag'?'Diag':'Check')+'GPS');
             btn.classList.add('active'); btn.innerText = "⏳";
@@ -474,8 +475,6 @@
             const link = `http://maps.google.com/?q=${pos.lat},${pos.lng}`;
             document.getElementById(activeMapContext === 'diag' ? 'diagCoords' : 'orderCoords').value = link;
             document.getElementById('mapModal').style.display = 'none';
-            
-            // Show preview mini map logic here could be added, but for now we just process
             if(activeMapContext === 'check') calculateShipping(pos);
         }
 
@@ -494,7 +493,7 @@
         }
         function setDelivery(type) { deliveryType = type; }
 
-        // --- SEND ---
+        // --- ENVIAR DATOS ---
         function sendOrder(e) {
             e.preventDefault();
             const name = document.getElementById('orderName').value;
